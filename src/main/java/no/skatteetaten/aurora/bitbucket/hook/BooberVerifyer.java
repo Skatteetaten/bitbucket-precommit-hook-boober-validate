@@ -10,7 +10,6 @@ import com.atlassian.bitbucket.util.PageRequest;
 import com.atlassian.bitbucket.util.PageRequestImpl;
 import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -18,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Component
 @Scanned
 public class BooberVerifyer implements PreReceiveRepositoryHook {
 
@@ -57,7 +55,7 @@ public class BooberVerifyer implements PreReceiveRepositoryHook {
 		};
 
 		PageRequest pr = new PageRequestImpl(0, 10000);
-		contentService.streamDirectory(context.getRepository(), "master", "/", true, callback, pr);
+		contentService.streamDirectory(context.getRepository(), "master", "", true, callback, pr);
 
 
 		for (RefChange refChange : refChanges) {
