@@ -157,12 +157,20 @@
                     <verbose>false</verbose>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <properties>
-        <bitbucket.version>4.9.1</bitbucket.version>
-        <bitbucket.data.version>4.9.1</bitbucket.data.version>
-        <amps.version>6.2.11</amps.version>
+        <bitbucket.version>5.4.0</bitbucket.version>
+        <bitbucket.data.version>5.4.0</bitbucket.data.version>
+        <amps.version>6.3.7</amps.version>
         <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
         <atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
         <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->

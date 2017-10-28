@@ -1,69 +1,54 @@
 package no.skatteetaten.aurora.bitbucket.hook;
 
+import com.atlassian.bitbucket.commit.*;
 import com.atlassian.bitbucket.content.*;
-import com.atlassian.bitbucket.hook.HookResponse;
-import com.atlassian.bitbucket.hook.repository.PreReceiveRepositoryHook;
-import com.atlassian.bitbucket.hook.repository.RepositoryHookContext;
-import com.atlassian.bitbucket.repository.RefChange;
-import com.atlassian.bitbucket.repository.RefChangeType;
-import com.atlassian.bitbucket.util.PageRequest;
-import com.atlassian.bitbucket.util.PageRequestImpl;
+import com.atlassian.bitbucket.hook.repository.*;
+import com.atlassian.bitbucket.repository.Repository;
 import com.atlassian.plugin.spring.scanner.annotation.component.Scanned;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 @Scanned
-public class BooberVerifyer implements PreReceiveRepositoryHook {
+public class BooberVerifyer implements PreRepositoryHook<RepositoryHookRequest> {
 
 
 	private ContentService contentService;
+	private CommitService commitService;
 
-	public BooberVerifyer(@ComponentImport final ContentService contentService) {
+	public BooberVerifyer(@ComponentImport final ContentService contentService, @ComponentImport final CommitService commitService) {
 
 		this.contentService = contentService;
+		this.commitService = commitService;
 	}
 
-	/**
-	 * Disables deletion of branches
-	 */
-	public boolean onReceive(RepositoryHookContext context, Collection<RefChange> refChanges, HookResponse hookResponse) {
-		hookResponse.out().println("=================================");
+	@Nonnull
+	@Override
+	public RepositoryHookResult preUpdate(@Nonnull PreRepositoryHookContext context, @Nonnull RepositoryHookRequest request) {
 
+		final Repository repo = request.getRepository();
+		final Map<String, ByteArrayOutputStream> filesStreams = new HashMap();
 
-		final List<String> files = new ArrayList();
-		ContentTreeCallback callback = new ContentTreeCallback() {
-			public void onEnd(@Nonnull ContentTreeSummary contentTreeSummary) throws IOException {
+		request.getRefChanges().stream()
+				.filter(change -> change.getRef().getId().equalsIgnoreCase("refs/heads/master"))
+				.forEach(refChange -> {
 
-			}
+					final ChangesRequest changesreq = new ChangesRequest.Builder(repo, refChange.getToHash()).sinceId(refChange.getFromHash()).build();
+					commitService.streamChanges(changesreq, change -> {
 
-			public void onStart(@Nonnull ContentTreeContext contentTreeContext) throws IOException {
+						String fileName = change.getPath().toString();
+						contentService.streamFile(repo, changesreq.getUntilId(), fileName, arg0 -> {
+							ByteArrayOutputStream baos = new ByteArrayOutputStream();
+							filesStreams.put(fileName, baos);
+							return baos;
+						});
+						return true;
+					});
+				});
 
-			}
-
-			public boolean onTreeNode(@Nonnull ContentTreeNode node) throws IOException {
-
-				files.add(node.getPath().toString());
-
-
-				return true;
-			}
-		};
-
-		PageRequest pr = new PageRequestImpl(0, 10000);
-		contentService.streamDirectory(context.getRepository(), "master", "", true, callback, pr);
-
-
-		for (RefChange refChange : refChanges) {
-			if (refChange.getType() == RefChangeType.DELETE) {
-				hookResponse.err().println("The ref '" + refChange.getRefId() + "' cannot be deleted.");
-				return false;
-			}
-		}
-		return true;
+		return RepositoryHookResult.accepted();
 	}
+
 }
